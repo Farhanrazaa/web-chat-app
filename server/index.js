@@ -11,7 +11,7 @@ const server = http.createServer(app);
 // List all the URLs that are allowed to connect to this server
 const allowedOrigins = [
   "http://localhost:3000", // For your local development
-  "https://YOUR-VERCEL-URL.vercel.app" // <-- REPLACE THIS WITH YOUR VERCEL URL
+  "https://web-chat-app-one.vercel.app" // <-- This is your correct URL from the error log
 ];
 
 // Setup CORS for Express API routes
@@ -30,7 +30,6 @@ const io = socketIo(server, {
 const PORT = process.env.PORT || 5000;
 
 // --- 2. API Routes ---
-// API routes must be defined *before* serving static files
 app.get('/api/users', (req, res) => {
     const users = [
         { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
@@ -43,7 +42,7 @@ app.get('/api/users', (req, res) => {
         { id: '8', name: 'Chris Evans', status: '2h ago', avatar: 'https://i.pravatar.cc/150?img=8', lastMessage: "On my way." },
         { id: '9', name: 'Sophie Turner', status: 'Online', avatar: 'https://i.pravatar.cc/150?img=9', lastMessage: "That sounds great!" },
         { id: '10', name: 'Ken Watanabe', status: 'Offline', avatar: 'https://i.pravatar.cc/150?img=11', lastMessage: "Please review the document." },
-        { id: '11', name: 'Aisha Khan', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=12', lastMessage: "I'll call you back." }
+        { id: '11', name: 'Aisha Khan', status: 'Active Now', avatar: 'https.i.pravatar.cc/150?img=12', lastMessage: "I'll call you back." }
     ];
     res.json(users);
 });
@@ -59,7 +58,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_message', (data) => {
-        // Broadcast to everyone *except* the sender
         socket.broadcast.to(data.roomId).emit('receive_message', data);
     });
 
@@ -70,13 +68,10 @@ io.on('connection', (socket) => {
 
 
 // --- 4. Serve React App (Static Files) ---
-// This part is for serving a production build, which we aren't doing,
-// but it's good to keep.
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 
 // --- 5. Fallback for React Router ---
-// This handles any routes that aren't API routes or static files
 app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
