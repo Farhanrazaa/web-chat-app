@@ -114,7 +114,7 @@ function App() {
             ) : (
                 <div className="no-chat-selected">
                     <FaComments className="no-chat-selected-icon" />
-                    <p>Select a chat to start messaging</p>
+                    <p>Select a chat to start messaging AAA</p>
                 </div>
             )}
         </div>
