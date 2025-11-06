@@ -1,0 +1,125 @@
+.profile-info-container {
+    /* This component will not be part of the main grid */
+    /* It will be placed by App.js */
+    width: 300px; /* Fixed width */
+    background-color: #2a2a4a; /* Matches chat list bg */
+    border-left: 1px solid #3a3a5a;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    overflow-y: auto;
+}
+
+.profile-header {
+    margin-bottom: 25px;
+}
+
+.profile-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #1f1f38; /* Darker bg */
+    border-radius: 15px;
+    margin-bottom: 30px;
+}
+
+.profile-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 3px solid #3f3f6a;
+}
+
+.profile-name {
+    margin: 0 0 5px 0;
+    color: #fff;
+    font-size: 1.2em;
+}
+
+.profile-status {
+    font-size: 0.9em;
+    color: #4CAF50; /* Green */
+}
+
+.attachments-section {
+    /* Takes up remaining space if needed */
+    flex-grow: 1;
+}
+
+.attachments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.attachments-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.attachment-count {
+    background-color: #3f3f6a;
+    color: #fff;
+    font-size: 0.8em;
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.attachment-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 columns */
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.attachment-gallery img {
+    width: 100%;
+    height: 100px; /* Fixed height for uniformity */
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.attachment-types {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.type-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+/* We used inline styles for the colors, but this is how */
+/* you would do it in pure CSS */
+.type-button.docs {
+    background: #e7f3ff;
+    color: #4b9fff;
+}
+.type-button.images {
+    background: #fff0e9;
+    color: #ff844b;
+}
+.type-button.audio {
+    background: #e9f9f0;
+    color: #31d07b;
+}

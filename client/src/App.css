@@ -1,0 +1,64 @@
+/* Reset and base styles */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #1a1a2e; /* Main dark background */
+    color: #e0e0e0; /* Light text */
+    height: 100vh;
+    overflow: hidden; /* Prevent scrolling on body */
+}
+
+#root {
+    height: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* Main application layout */
+.app-container {
+    display: grid;
+    /* Sidebar | Chat List | Chat Window */
+    grid-template-columns: 80px 350px 1fr 300px;
+    height: 100vh;
+    background-color: #1a1a2e;
+}
+
+/* Fallback for when no chat is selected */
+.no-chat-selected {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    grid-column: 3 / 5; /* Span across the chat window area */
+    font-size: 1.2em;
+    color: #5a5a8a;
+}
+
+.no-chat-selected-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1f1f38; /* Even darker background for track */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a4a7a; /* Muted purple/blue for thumb */
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #5a5a8a; /* Lighter on hover */
+}

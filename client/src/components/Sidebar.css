@@ -1,0 +1,105 @@
+.sidebar {
+    background-color: #1f1f38; /* Slightly lighter than main bg */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 25px 0;
+    border-right: 1px solid #3a3a5a; /* Separator line */
+    grid-column: 1 / 2;
+}
+
+.sidebar-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.sidebar-profile img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.sidebar-profile span {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #fff;
+}
+
+.sidebar-nav {
+    width: 100%;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Space between icons */
+}
+
+.sidebar-nav li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8em;
+    color: #888;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    padding: 10px 0;
+    width: 100%;
+    position: relative;
+}
+
+.sidebar-nav li svg {
+    font-size: 1.5em; /* Make icon larger */
+}
+
+.sidebar-nav li:hover {
+    color: #fff;
+}
+
+/* Active state styling */
+.sidebar-nav li.active {
+    color: #fff;
+}
+
+/* The little purple line for active state */
+.sidebar-nav li.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 30px;
+    background-color: #8a2be2; /* Bright purple */
+    border-radius: 0 4px 4px 0;
+}
+
+.sidebar-bottom {
+    margin-top: auto; /* Pushes to the bottom */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    font-size: 1.3em;
+    color: #888;
+}
+
+.sidebar-bottom .add-icon,
+.sidebar-bottom .settings-icon {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.sidebar-bottom .add-icon:hover,
+.sidebar-bottom .settings-icon:hover {
+    color: #fff;
+}

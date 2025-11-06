@@ -1,0 +1,192 @@
+.chat-window-container {
+    grid-column: 3 / 4; /* Takes up the 3rd grid column */
+    display: flex;
+    flex-direction: column;
+    background-color: #1a1a2e; /* Main dark background */
+    overflow: hidden; /* Contains header/footer, lets message list scroll */
+}
+
+/* --- 1. CHAT HEADER --- */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 30px;
+    background-color: #2a2a4a; /* Matches chat list bg */
+    border-bottom: 1px solid #3a3a5a;
+    flex-shrink: 0; /* Prevents header from shrinking */
+}
+
+.chat-header-info {
+    display: flex;
+    align-items: center;
+}
+
+.chat-header-avatar { /* This is hidden in the final design */
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+}
+
+.chat-header-info h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.chat-header-status {
+    font-size: 0.9em;
+    color: #4CAF50; /* Green for active */
+}
+
+.chat-header-actions {
+    display: flex;
+    gap: 25px;
+    font-size: 1.2em;
+    color: #999;
+}
+
+.chat-header-actions svg {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.chat-header-actions svg:hover {
+    color: #fff;
+}
+
+/* --- 2. MESSAGES LIST --- */
+.chat-messages {
+    flex-grow: 1; /* Takes up all available space */
+    padding: 30px;
+    overflow-y: auto; /* The magic for scrolling */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.message-bubble {
+    display: flex;
+    align-items: flex-end; /* Aligns avatar with bottom of bubble */
+    max-width: 65%; /* Messages don't go all the way across */
+}
+
+/* Styles for SENT messages (current user) */
+.message-bubble.sent {
+    align-self: flex-end; /* Pushes to the right */
+}
+
+.message-bubble.sent .message-content {
+    background-image: linear-gradient(to right, #8a2be2, #4b0082); /* Purple gradient */
+    color: #fff;
+    border-bottom-right-radius: 5px; /* "Tear" effect */
+}
+
+/* Styles for RECEIVED messages (other user) */
+.message-bubble.received {
+    align-self: flex-start; /* Pushes to the left */
+}
+
+.message-bubble.received .message-content {
+    background-color: #3f3f6a; /* Dark blue/purple */
+    color: #e0e0e0;
+    border-bottom-left-radius: 5px; /* "Tear" effect */
+}
+
+.message-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.message-content {
+    padding: 12px 18px;
+    border-radius: 18px;
+    line-height: 1.4;
+    word-wrap: break-word; /* Ensure long words wrap */
+}
+
+.message-content p {
+    margin: 0;
+    font-size: 0.95em;
+}
+
+.message-time {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 5px;
+    text-align: right;
+    display: block;
+}
+
+.message-bubble.received .message-time {
+    color: rgba(230, 230, 230, 0.7);
+    text-align: left;
+}
+
+/* --- 3. MESSAGE INPUT FORM --- */
+.chat-input-area {
+    display: flex;
+    align-items: center;
+    padding: 20px 30px;
+    background-color: #2a2a4a; /* Matches header */
+    border-top: 1px solid #3a3a5a;
+    gap: 15px;
+    flex-shrink: 0; /* Prevents input from shrinking */
+}
+
+.chat-input-area input {
+    flex-grow: 1;
+    background-color: #1f1f38; /* Darker input bg */
+    border: 1px solid #3a3a5a;
+    outline: none;
+    padding: 12px 18px;
+    border-radius: 25px;
+    color: #fff;
+    font-size: 1em;
+}
+
+.chat-input-area input:focus {
+    border-color: #8a2be2;
+}
+
+.chat-input-area input::placeholder {
+    color: #7a7a9a;
+}
+
+.chat-input-area .input-icon {
+    font-size: 1.3em;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.chat-input-area .input-icon:hover {
+    color: #fff;
+}
+
+.send-button {
+    background-image: linear-gradient(to right, #8a2be2, #4b0082); /* Purple gradient */
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: #fff;
+    font-size: 1.3em;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.send-button:hover {
+    transform: scale(1.05);
+}
