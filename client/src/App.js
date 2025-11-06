@@ -1,4 +1,5 @@
-const BACKEND_URL = 'https://my-chat-backend-97jf.onrender.com'; // <-- REPLACE THIS
+// --- 1. PASTE YOUR RENDER URL HERE ---
+const BACKEND_URL = 'https://my-chat-backend-97lf.onrender.com'; // <-- YOUR LIVE URL
 
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
@@ -7,77 +8,62 @@ import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import ProfileInfo from './components/ProfileInfo';
 import ContactList from './components/ContactList';
-import { FaComments } from 'react-icons/fa'; // Icon for fallback
-import './App.css'; // We already styled this
+import { FaComments } from 'react-icons/fa';
+import './App.css';
 
-
-// Connect to your Node.js backend server (running on port 5000)
-const socket = io('https://my-chat-backend-97jf.onrender.com');
+// --- 2. CONNECT SOCKET TO LIVE URL ---
+const socket = io(BACKEND_URL);
 
 function App() {
-    // State to hold the list of users/chats
     const [chats, setChats] = useState([]);
-    // State to hold the ID of the currently selected chat
     const [selectedChatId, setSelectedChatId] = useState(null);
-    // State to hold all messages for the selected chat
     const [messages, setMessages] = useState([]);
-    const [view, setView] = useState('inbox'); // 'inbox' or 'contacts'
+    const [view, setView] = useState('inbox');
 
-    // This is a hardcoded "current user" for sending messages.
-    // In a real app, this would come from a login system.
-    const currentUser = {
-        id: 'currentUser123',
-        name: 'Alexa',
-        avatar: 'https://i.pravatar.cc/150?img=10' // A different avatar
+    const currentUser = { 
+        id: 'currentUser123', 
+        name: 'Alexa', 
+        avatar: 'https://i.pravatar.cc/150?img=10'
     };
 
-    // --- Effects ---
-
-    // 1. Fetch the list of chat users when the app loads
+    // --- 3. FETCH USERS FROM LIVE URL ---
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/users`)
-            .then(res => res.json())
+        fetch(`${BACKEND_URL}/api/users`) // <-- This is the other crucial fix
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return res.json();
+            })
             .then(data => setChats(data))
             .catch(error => console.error('Error fetching users:', error));
-    }, []); // The empty array [] means this runs only once
+    }, []);
 
-    // 2. Set up WebSocket listeners
     useEffect(() => {
         const handleReceiveMessage = (message) => {
-
-            // --- ADD THIS FIX ---
-            // If the incoming message's senderId is us, ignore it.
             if (message.senderId === currentUser.id) {
                 return;
             }
-            // --- END OF FIX ---
-
-            // Only add the message if it belongs to the currently open chat
             if (message.roomId === selectedChatId) {
                 setMessages((prevMessages) => [...prevMessages, message]);
             }
         };
+
         socket.on('receive_message', handleReceiveMessage);
 
-        // Clean up the listener when the component unmounts
         return () => {
             socket.off('receive_message', handleReceiveMessage);
         };
-    }, [selectedChatId]); // Re-run this effect if selectedChatId changes
+    }, [selectedChatId, currentUser.id]);
 
-
-    // --- Helper Functions ---
-
-    // Called when a user clicks on a chat in the ChatList
+    
     const handleSelectChat = (chatId) => {
         setSelectedChatId(chatId);
-        setMessages([]);
+        setMessages([]); 
         socket.emit('join_room', chatId);
-        setView('inbox'); // <-- ADD THIS LINE to switch back to chat
+        setView('inbox');
     };
 
-
-    // Called when the user sends a message from ChatWindow
     const handleSendMessage = (messageContent) => {
         if (!selectedChatId || !messageContent.trim()) return;
 
@@ -89,23 +75,17 @@ function App() {
             timestamp: new Date().toISOString(),
             avatar: currentUser.avatar,
         };
-
-        // Send the message to the server
+        
         socket.emit('send_message', newMessage);
-
-        // Optimistically add the message to our own UI
-        // We add an 'isSender' flag just for styling
         setMessages((prevMessages) => [...prevMessages, { ...newMessage, isSender: true }]);
     };
 
-    // Find the full chat object for the selected chat
     const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
     return (
         <div className="app-container">
             <Sidebar currentView={view} onSetView={setView} />
-
-            {/* --- Conditional List Area --- */}
+            
             {view === 'inbox' ? (
                 <ChatList
                     chats={chats}
@@ -114,16 +94,15 @@ function App() {
                 />
             ) : (
                 <ContactList
-                    contacts={chats} // Pass all users as contacts
-                    onSelectContact={handleSelectChat} // Re-use the same function!
+                    contacts={chats}
+                    onSelectContact={handleSelectChat}
                 />
             )}
 
-            {/* --- Main Content Area --- */}
             {selectedChat ? (
                 <>
                     <ChatWindow
-                        key={selectedChat.id} // Ensures component remounts on chat change
+                        key={selectedChat.id}
                         chat={selectedChat}
                         messages={messages}
                         onSendMessage={handleSendMessage}
