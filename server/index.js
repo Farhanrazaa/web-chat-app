@@ -2,23 +2,35 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const cors = require('cors'); // <-- Make sure this is imported
 
 const app = express();
 const server = http.createServer(app);
 
+// --- 1. CORS Configuration ---
+// List all the URLs that are allowed to connect to this server
+const allowedOrigins = [
+  "http://localhost:3000", // For your local development
+  "https://YOUR-VERCEL-URL.vercel.app" // <-- REPLACE THIS WITH YOUR VERCEL URL
+];
+
+// Setup CORS for Express API routes
+app.use(cors({
+  origin: allowedOrigins
+}));
+
+// Setup CORS for Socket.IO
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
 
 const PORT = process.env.PORT || 5000;
 
-// --- 1. API Routes ---
-// We define API routes FIRST, so they are always matched before the static files.
-// Inside server/index.js
-
+// --- 2. API Routes ---
+// API routes must be defined *before* serving static files
 app.get('/api/users', (req, res) => {
     const users = [
         { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
@@ -37,7 +49,7 @@ app.get('/api/users', (req, res) => {
 });
 
 
-// --- 2. WebSocket Logic ---
+// --- 3. WebSocket Logic ---
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
@@ -47,7 +59,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('send_message', (data) => {
-        io.to(data.roomId).emit('receive_message', data);
+        // Broadcast to everyone *except* the sender
+        socket.broadcast.to(data.roomId).emit('receive_message', data);
     });
 
     socket.on('disconnect', () => {
@@ -56,20 +69,19 @@ io.on('connection', (socket) => {
 });
 
 
-// --- 3. Serve the React App (Static Files) ---
-// This serves files like index.html, main.js, main.css
+// --- 4. Serve React App (Static Files) ---
+// This part is for serving a production build, which we aren't doing,
+// but it's good to keep.
 app.use(express.static(path.join(__dirname, '../client/build')));
 
 
-// --- 4. Fallback for React Router ---
-// THIS IS THE FIXED LINE.
-// It uses a regex to match any path that DOES NOT start with /api
-// This forwards all other requests (like /chat/123) to React.
+// --- 5. Fallback for React Router ---
+// This handles any routes that aren't API routes or static files
 app.get(/^(?!\/api).*/, (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
 });
 
 
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

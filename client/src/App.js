@@ -1,3 +1,5 @@
+const BACKEND_URL = 'https://my-chat-backend-97jf.onrender.com'; // <-- REPLACE THIS
+
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
@@ -10,7 +12,7 @@ import './App.css'; // We already styled this
 
 
 // Connect to your Node.js backend server (running on port 5000)
-const socket = io('http://localhost:5000');
+const socket = io('https://my-chat-backend-97jf.onrender.com');
 
 function App() {
     // State to hold the list of users/chats
@@ -33,7 +35,7 @@ function App() {
 
     // 1. Fetch the list of chat users when the app loads
     useEffect(() => {
-        fetch('/api/users')
+        fetch(`${BACKEND_URL}/api/users`)
             .then(res => res.json())
             .then(data => setChats(data))
             .catch(error => console.error('Error fetching users:', error));
