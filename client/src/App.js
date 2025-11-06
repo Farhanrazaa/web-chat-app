@@ -1,6 +1,4 @@
-// --- 1. PASTE YOUR RENDER URL HERE ---
-const BACKEND_URL = 'https://my-chat-backend-97lf.onrender.com'; // <-- YOUR LIVE URL
-
+// --- 1. ALL IMPORTS MUST BE FIRST ---
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
@@ -11,7 +9,10 @@ import ContactList from './components/ContactList';
 import { FaComments } from 'react-icons/fa';
 import './App.css';
 
-// --- 2. CONNECT SOCKET TO LIVE URL ---
+// --- 2. PASTE YOUR RENDER URL HERE (AFTER IMPORTS) ---
+const BACKEND_URL = 'https://my-chat-backend-97lf.onrender.com';
+
+// --- 3. CONNECT SOCKET TO LIVE URL ---
 const socket = io(BACKEND_URL);
 
 function App() {
@@ -26,9 +27,9 @@ function App() {
         avatar: 'https://i.pravatar.cc/150?img=10'
     };
 
-    // --- 3. FETCH USERS FROM LIVE URL ---
+    // --- 4. FETCH USERS FROM LIVE URL ---
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/users`) // <-- This is the other crucial fix
+        fetch(`${BACKEND_URL}/api/users`)
             .then(res => {
                 if (!res.ok) {
                     throw new Error('Network response was not ok');
