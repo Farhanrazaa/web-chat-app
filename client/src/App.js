@@ -3,14 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
-import { 
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp
-} from 'firebase/firestore'; 
+import {
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    serverTimestamp
+} from 'firebase/firestore';
 
 // --- 2. IMPORT LOGIN/SIGNUP COMPONENTS ---
 import Login from './components/Login';
@@ -30,7 +30,7 @@ function App() {
     const [authView, setAuthView] = useState('login'); // 'login' or 'signup'
     const [loading, setLoading] = useState(true); // For initial auth check
 
-    const [chats, setChats] = useState([]); 
+    const [chats, setChats] = useState([]);
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
@@ -56,19 +56,19 @@ function App() {
     useEffect(() => {
         const staticUsers = [
             { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
-            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https.i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
-            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https.i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
+            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https://i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
+            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https://i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
+            // Add more users here if you like
         ];
         setChats(staticUsers);
     }, []);
-
     // (This message listener is the same as before)
     useEffect(() => {
-        if (!selectedChatId) return; 
+        if (!selectedChatId) return;
 
         const q = query(
-          collection(db, 'chats', selectedChatId, 'messages'),
-          orderBy('timestamp', 'asc')
+            collection(db, 'chats', selectedChatId, 'messages'),
+            orderBy('timestamp', 'asc')
         );
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -80,14 +80,14 @@ function App() {
         });
 
         return () => {
-          unsubscribe(); 
+            unsubscribe();
         };
-    }, [selectedChatId]); 
+    }, [selectedChatId]);
 
 
     const handleSelectChat = (chatId) => {
         setSelectedChatId(chatId);
-        setMessages([]); 
+        setMessages([]);
         setView('inbox');
     };
 
@@ -100,7 +100,7 @@ function App() {
             senderName: user.email.split('@')[0], // <-- Use their email as a name
             content: messageContent,
             avatar: 'https://i.pravatar.cc/150?img=10', // (You'd get this from their profile)
-            timestamp: serverTimestamp() 
+            timestamp: serverTimestamp()
         };
 
         await addDoc(collection(db, 'chats', selectedChatId, 'messages'), newMessage);
@@ -124,7 +124,7 @@ function App() {
     return (
         <div className="app-container">
             <Sidebar user={user} currentView={view} onSetView={setView} />
-            
+
             {view === 'inbox' ? (
                 <ChatList
                     chats={chats}
