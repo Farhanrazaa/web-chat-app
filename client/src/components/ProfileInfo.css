@@ -123,3 +123,33 @@
     background: #e9f9f0;
     color: #31d07b;
 }
+
+/* --- ADD THIS CSS TO THE END OF YOUR FILE --- */
+
+.profile-name-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.profile-name {
+    margin: 0;
+    color: #fff;
+    font-size: 1.2em;
+}
+
+.favorite-star-icon {
+    font-size: 1.1em;
+    color: #7a7a9a; /* Default color (not favorite) */
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.favorite-star-icon:hover {
+    transform: scale(1.2);
+}
+
+.favorite-star-icon.active {
+    color: #f0c420; /* Yellow color (is favorite) */
+}

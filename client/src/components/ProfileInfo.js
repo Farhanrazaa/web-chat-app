@@ -1,17 +1,17 @@
 import React from 'react';
-import './ProfileInfo.css'; // We will create this next
-import { FaFileAlt, FaImage, FaMicrophone } from 'react-icons/fa';
+import './ProfileInfo.css';
+import { FaFileAlt, FaImage, FaMicrophone, FaStar } from 'react-icons/fa'; // <-- Import FaStar
 
-// We'll use placeholder images for the attachments
+// Placeholder images for attachments
 const img1 = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=100";
 const img2 = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=100";
 const img3 = "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100";
 const img4 = "https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=100";
 
-
-function ProfileInfo({ user }) {
+// --- Receive new props: onToggleFavorite and isFavorite ---
+function ProfileInfo({ user, onToggleFavorite, isFavorite }) {
     if (!user) {
-        return null; // Don't render anything if no user is selected
+        return null;
     }
 
     return (
@@ -23,8 +23,16 @@ function ProfileInfo({ user }) {
             {/* --- User Details --- */}
             <div className="profile-card">
                 <img src={user.avatar} alt={user.name} className="profile-avatar-large" />
-                <h4 className="profile-name">{user.name}</h4>
-                <span className="profile-status">{user.status}</span>
+                
+                {/* --- FAVORITE BUTTON ADDED --- */}
+                <div className="profile-name-container">
+                    <h4 className="profile-name">{user.name}</h4>
+                    <FaStar 
+                        className={`favorite-star-icon ${isFavorite ? 'active' : ''}`}
+                        onClick={() => onToggleFavorite(user.uid)}
+                    />
+                </div>
+                <span className="profile-status">{user.status || 'Online'}</span>
             </div>
 
             {/* --- Attachments Section --- */}

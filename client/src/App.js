@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // <-- 1. IMPORT useMemo
+import React, { useState, useEffect, useMemo } from 'react';
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
@@ -7,8 +7,11 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
-  setDoc, // <-- 2. IMPORT setDoc
-  doc,    // <-- 3. IMPORT doc
+  setDoc,
+  doc,
+  updateDoc, // <-- 1. IMPORT updateDoc
+  arrayUnion, // <-- 2. IMPORT arrayUnion
+  arrayRemove, // <-- 3. IMPORT arrayRemove
   serverTimestamp
 } from 'firebase/firestore'; 
 
@@ -23,7 +26,8 @@ import { FaComments } from 'react-icons/fa';
 import './App.css';
 
 function App() {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(null); // Auth user object
+    const [userProfile, setUserProfile] = useState(null); // <-- 4. NEW: User profile from DB
     const [authView, setAuthView] = useState('login');
     const [loading, setLoading] = useState(true);
 
@@ -33,19 +37,33 @@ function App() {
     const [selectedChatUser, setSelectedChatUser] = useState(null);
     
     const [messages, setMessages] = useState([]);
-    const [view, setView] = useState('inbox');
-
-    // --- 4. NEW STATE ---
-    // This will hold the last message for *every* room
+    const [view, setView] = useState('inbox'); // 'inbox', 'contacts', or 'favorites'
     const [lastMessages, setLastMessages] = useState({});
 
-    // Auth listener (same as before)
+    // Auth listener (This now also fetches the user's profile)
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-            if (authUser) { setUser(authUser); } else { setUser(null); }
-            setLoading(false); 
+            if (authUser) {
+                setUser(authUser);
+                // --- 5. NEW: Fetch the user's profile from Firestore ---
+                const userDocRef = doc(db, "users", authUser.uid);
+                const unsubProfile = onSnapshot(userDocRef, (doc) => {
+                    if (doc.exists()) {
+                        setUserProfile(doc.data());
+                    } else {
+                        // This might happen if signup fails to create the doc
+                        console.log("User profile not found in Firestore!");
+                    }
+                });
+                setLoading(false);
+                return () => unsubProfile(); // Cleanup profile listener
+            } else {
+                setUser(null);
+                setUserProfile(null);
+                setLoading(false); 
+            }
         });
-        return () => unsubscribe();
+        return () => unsubscribe(); // Cleanup auth listener
     }, []);
 
     // Dynamic user list listener (same as before)
@@ -64,16 +82,13 @@ function App() {
         return () => unsubscribe();
     }, [user]); 
 
-    // --- 5. NEW LISTENER FOR LAST MESSAGES ---
-    // This listens to our new 'lastMessages' collection
+    // Last messages listener (same as before)
     useEffect(() => {
         if (!user) return;
         const q = query(collection(db, "lastMessages"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const messagesByRoom = {};
-            snapshot.forEach(doc => {
-                messagesByRoom[doc.id] = doc.data();
-            });
+            snapshot.forEach(doc => { messagesByRoom[doc.id] = doc.data(); });
             setLastMessages(messagesByRoom);
         });
         return () => unsubscribe();
@@ -108,10 +123,9 @@ function App() {
         setView('inbox');
     };
 
-    // --- 6. UPDATED SEND MESSAGE FUNCTION ---
+    // handleSendMessage (same as before)
     const handleSendMessage = async (messageContent) => {
         if (!selectedRoomId || !messageContent.trim() || !user) return;
-
         const newMessage = {
             senderId: user.uid, 
             senderName: user.email.split('@')[0],
@@ -119,18 +133,36 @@ function App() {
             avatar: 'https://i.pravatar.cc/150?u=' + user.uid,
             timestamp: serverTimestamp() 
         };
-
-        // 1. Add the message to the specific chat room's sub-collection
         await addDoc(collection(db, 'chats', selectedRoomId, 'messages'), newMessage);
-
-        // 2. ALSO update the 'lastMessages' collection for the preview
         await setDoc(doc(db, "lastMessages", selectedRoomId), newMessage);
     };
 
-    // --- 7. NEW: COMBINE USERS AND LAST MESSAGES ---
-    // This combines our two lists (users and messages)
-    // and sorts the chat list by the most recent message.
+    // --- 6. NEW: TOGGLE FAVORITE FUNCTION ---
+    const handleToggleFavorite = async (otherUserUid) => {
+        if (!userProfile) return;
+
+        const userDocRef = doc(db, "users", user.uid);
+        const isFavorite = userProfile.favorites.includes(otherUserUid);
+
+        if (isFavorite) {
+            // Remove from favorites
+            await updateDoc(userDocRef, {
+                favorites: arrayRemove(otherUserUid)
+            });
+        } else {
+            // Add to favorites
+            await updateDoc(userDocRef, {
+                favorites: arrayUnion(otherUserUid)
+            });
+        }
+    };
+
+    // --- 7. UPDATED: COMBINE USERS, MESSAGES, AND FAVORITES ---
     const chatsWithLastMessages = useMemo(() => {
+        if (!userProfile) return []; // Don't process if profile isn't loaded
+
+        const favoritesList = userProfile.favorites || [];
+
         return chats.map(chat => {
             const currentUserUid = user.uid;
             const otherUserUid = chat.uid;
@@ -143,13 +175,19 @@ function App() {
             return {
                 ...chat,
                 lastMessage: lastMsg ? lastMsg.content : "Tap to start chatting...",
-                timestamp: lastMsg ? lastMsg.timestamp : null
+                timestamp: lastMsg ? lastMsg.timestamp : null,
+                isFavorite: favoritesList.includes(chat.uid) // <-- Check if user is a favorite
             };
         }).sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
-    }, [chats, lastMessages, user]);
+    }, [chats, lastMessages, user, userProfile]);
+
+    // --- 8. NEW: CREATE THE FAVORITES-ONLY LIST ---
+    const favoriteChats = useMemo(() => {
+        return chatsWithLastMessages.filter(chat => chat.isFavorite);
+    }, [chatsWithLastMessages]);
 
 
-    // --- 8. RENDER LOGIC (UPDATED) ---
+    // --- 9. RENDER LOGIC (UPDATED) ---
     if (loading) {
         return <div className="auth-container"><h2>Loading...</h2></div>;
     }
@@ -162,21 +200,30 @@ function App() {
         );
     }
 
+    // Determine which list to show
+    let listToShow = chatsWithLastMessages;
+    if (view === 'contacts') {
+        listToShow = chats; // Contacts list shouldn't be sorted by time
+    } else if (view === 'favorites') {
+        listToShow = favoriteChats; // Show only favorites
+    }
+
     return (
         <div className="app-container">
+            {/* We now pass 'setView' to the Sidebar */}
             <Sidebar user={user} currentView={view} onSetView={setView} />
             
-            {/* We now pass in the new combined/sorted list */}
-            {view === 'inbox' ? (
-                <ChatList
-                    chats={chatsWithLastMessages}
-                    onSelectChat={handleSelectChat}
-                    selectedChatId={selectedChatUser ? selectedChatUser.id : null}
+            {view === 'contacts' ? (
+                 <ContactList
+                    contacts={chats}
+                    onSelectContact={handleSelectChat}
                 />
             ) : (
-                <ContactList
-                    contacts={chatsWithLastMessages}
-                    onSelectContact={handleSelectChat}
+                 <ChatList
+                    // We pass the correct list based on the view
+                    chats={listToShow} 
+                    onSelectChat={handleSelectChat}
+                    selectedChatId={selectedChatUser ? selectedChatUser.id : null}
                 />
             )}
 
@@ -189,7 +236,12 @@ function App() {
                         onSendMessage={handleSendMessage}
                         currentUser={user}
                     />
-                    <ProfileInfo user={selectedChatUser} />
+                    <ProfileInfo 
+                        user={selectedChatUser} 
+                        // --- 10. PASS NEW PROPS ---
+                        onToggleFavorite={handleToggleFavorite}
+                        isFavorite={userProfile.favorites.includes(selectedChatUser.uid)}
+                    />
                 </>
             ) : (
                 <div className="no-chat-selected">

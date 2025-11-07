@@ -1,29 +1,27 @@
 import React from 'react';
 import './Sidebar.css';
-import { FaUser, FaComments, FaStar, FaCog, FaPlus, FaSignOutAlt } from 'react-icons/fa'; // <-- Add FaSignOutAlt
-import { auth } from '../firebase'; // <-- 1. IMPORT AUTH
-import { signOut } from 'firebase/auth'; // <-- 2. IMPORT SIGNOUT
+import { FaUser, FaComments, FaStar, FaCog, FaPlus, FaSignOutAlt } from 'react-icons/fa';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
-function Sidebar({ user, currentView, onSetView }) { // <-- We get the 'user' prop
+function Sidebar({ user, currentView, onSetView }) {
 
-    // 3. CREATE LOGOUT FUNCTION
     const handleLogout = () => {
         signOut(auth).catch((err) => console.error(err));
     };
 
-    // Use the user's email for their avatar/name
     const userName = user ? user.email.split('@')[0] : 'Alexa';
 
     return (
         <div className="sidebar">
             <div className="sidebar-profile">
-                <img src="https://i.pravatar.cc/150?img=10" alt={userName} />
+                <img src={`https://i.pravatar.cc/150?u=${user.uid}`} alt={userName} />
                 <span>{userName}</span>
             </div>
             
             <nav className="sidebar-nav">
-                {/* ... (your nav list items are the same) ... */}
                 <ul>
+                    {/* --- Chat Button --- */}
                     <li 
                         className={currentView === 'inbox' ? 'active' : ''}
                         onClick={() => onSetView('inbox')}
@@ -31,6 +29,8 @@ function Sidebar({ user, currentView, onSetView }) { // <-- We get the 'user' pr
                         <FaComments />
                         <span>Chat</span>
                     </li>
+                    
+                    {/* --- Contacts Button --- */}
                     <li
                         className={currentView === 'contacts' ? 'active' : ''}
                         onClick={() => onSetView('contacts')}
@@ -38,7 +38,12 @@ function Sidebar({ user, currentView, onSetView }) { // <-- We get the 'user' pr
                         <FaUser />
                         <span>Contacts</span>
                     </li>
-                    <li onClick={() => alert('Favorites not yet implemented!')}>
+                    
+                    {/* --- FAVORITES BUTTON (Now functional) --- */}
+                    <li
+                        className={currentView === 'favorites' ? 'active' : ''}
+                        onClick={() => onSetView('favorites')}
+                    >
                         <FaStar />
                         <span>Favorites</span>
                     </li>
@@ -48,7 +53,6 @@ function Sidebar({ user, currentView, onSetView }) { // <-- We get the 'user' pr
             <div className="sidebar-bottom">
                 <FaPlus className="add-icon" />
                 <FaCog className="settings-icon" />
-                {/* --- 4. ADD THE LOGOUT BUTTON --- */}
                 <FaSignOutAlt className="logout-icon" onClick={handleLogout} />
             </div>
         </div>
