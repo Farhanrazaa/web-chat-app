@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { auth, db } from '../firebase'; // <-- 1. IMPORT db
+import { auth, db } from '../firebase'; // <-- Make sure 'db' is imported
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; // <-- 2. IMPORT doc and setDoc
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'; // <-- Make sure 'doc' and 'setDoc' are imported
 
 import './Auth.css';
 
@@ -18,17 +18,18 @@ function SignUp({ onSwitchToLogin }) {
             return;
         }
         try {
-            // --- 3. CREATE THE USER ---
+            // --- 1. CREATE THE USER ---
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // --- 4. SAVE THE USER TO THE 'users' COLLECTION ---
-            // We use setDoc to create a new document with the user's UID as its ID
+            // --- 2. SAVE THE USER TO THE 'users' COLLECTION ---
+            // This is the part that was likely missing or broken
             await setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 email: user.email,
-                name: user.email.split('@')[0], // Use email prefix as a default name
-                avatar: `https://i.pravatar.cc/150?u=${user.uid}` // Generate a unique random avatar
+                name: user.email.split('@')[0], 
+                avatar: `https://i.pravatar.cc/150?u=${user.uid}`,
+                createdAt: serverTimestamp() // Good to add a timestamp
             });
 
         } catch (err) {
