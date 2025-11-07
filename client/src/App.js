@@ -21,7 +21,7 @@ import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import ProfileInfo from './components/ProfileInfo';
 import ContactList from './components/ContactList';
-import { FaComments }S from 'react-icons/fa';
+import { FaComments } from 'react-icons/fa'; // <-- HERE IS THE FIX
 import './App.css';
 
 function App() {
@@ -36,8 +36,6 @@ function App() {
     const [view, setView] = useState('inbox');
 
     // --- 4. AUTHENTICATION LISTENER ---
-    // This is the core of our new logic. It runs on load
-    // and checks if the user is already logged in.
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
             if (authUser) {
@@ -54,11 +52,10 @@ function App() {
         return () => unsubscribe();
     }, []);
 
-    // (This 'static' user list is still for demo.
-    // In a real app, this would also come from Firebase)
+    // (This 'static' user list is still for demo)
     useEffect(() => {
         const staticUsers = [
-            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https.i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
+            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
             { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https.i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
             { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https.i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
         ];
@@ -112,13 +109,10 @@ function App() {
     const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
     // --- 6. NEW RENDER LOGIC ---
-
-    // Show a loading spinner while checking auth
     if (loading) {
         return <div className="auth-container"><h2>Loading...</h2></div>;
     }
 
-    // If no user, show the Login or SignUp page
     if (!user) {
         return authView === 'login' ? (
             <Login onSwitchToSignUp={() => setAuthView('signup')} />
@@ -127,10 +121,8 @@ function App() {
         );
     }
 
-    // If user IS logged in, show the chat app
     return (
         <div className="app-container">
-            {/* We pass the 'user' object to Sidebar for the logout button */}
             <Sidebar user={user} currentView={view} onSetView={setView} />
             
             {view === 'inbox' ? (
