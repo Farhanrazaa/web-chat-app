@@ -9,6 +9,14 @@ function getStatusClass(status) {
     return 'offline'; 
 }
 
+// --- NEW: Helper function to format the time ---
+function formatChatTime(timestamp) {
+    if (!timestamp) return ''; // No message yet
+    
+    const date = timestamp.toDate();
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function ChatList({ chats, onSelectChat, selectedChatId }) {
     return (
         <div className="chat-list-container">
@@ -21,11 +29,12 @@ function ChatList({ chats, onSelectChat, selectedChatId }) {
             </div>
             
             <div className="chat-list-items">
+                {/* 'chats' is now the new combined/sorted list */}
                 {chats.map(chat => (
                     <div
                         key={chat.id}
                         className={`chat-list-item ${selectedChatId === chat.id ? 'active' : ''}`}
-                        onClick={() => onSelectChat(chat)} // <-- THIS IS THE FIX (pass whole 'chat' object)
+                        onClick={() => onSelectChat(chat)}
                     >
                         <div className="chat-avatar-container">
                             <img src={chat.avatar} alt={chat.name} className="chat-avatar" />
@@ -35,9 +44,11 @@ function ChatList({ chats, onSelectChat, selectedChatId }) {
                         <div className="chat-info">
                             <div className="chat-name-and-time">
                                 <span className="chat-name">{chat.name}</span>
-                                <span className="chat-time">12:30 PM</span> 
+                                {/* --- UPDATED: Show real time --- */}
+                                <span className="chat-time">{formatChatTime(chat.timestamp)}</span> 
                             </div>
                             <div className="chat-last-message">
+                                {/* --- UPDATED: Show real message --- */}
                                 <p>{chat.lastMessage}</p>
                             </div>
                         </div>

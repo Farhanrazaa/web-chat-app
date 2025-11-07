@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // <-- 1. IMPORT useMemo
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { 
@@ -7,6 +7,8 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
+  setDoc, // <-- 2. IMPORT setDoc
+  doc,    // <-- 3. IMPORT doc
   serverTimestamp
 } from 'firebase/firestore'; 
 
@@ -27,40 +29,34 @@ function App() {
 
     const [chats, setChats] = useState([]); 
     
-    // These two states are the core of the fix
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [selectedChatUser, setSelectedChatUser] = useState(null);
     
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
 
-    // Auth listener
+    // --- 4. NEW STATE ---
+    // This will hold the last message for *every* room
+    const [lastMessages, setLastMessages] = useState({});
+
+    // Auth listener (same as before)
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-            if (authUser) {
-                setUser(authUser);
-            } else {
-                setUser(null);
-            }
+            if (authUser) { setUser(authUser); } else { setUser(null); }
             setLoading(false); 
         });
         return () => unsubscribe();
     }, []);
 
-    // Dynamic user list listener
+    // Dynamic user list listener (same as before)
     useEffect(() => {
         if (!user) return; 
-
         const q = query(collection(db, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const usersList = [];
             querySnapshot.forEach((doc) => {
                 if (doc.data().uid !== user.uid) {
-                    usersList.push({
-                         ...doc.data(),
-                         id: doc.data().uid, 
-                         lastMessage: "Tap to start chatting..."
-                    });
+                    usersList.push({ ...doc.data(), id: doc.data().uid });
                 }
             });
             setChats(usersList);
@@ -68,46 +64,51 @@ function App() {
         return () => unsubscribe();
     }, [user]); 
 
-    // Message listener (now depends on selectedRoomId)
+    // --- 5. NEW LISTENER FOR LAST MESSAGES ---
+    // This listens to our new 'lastMessages' collection
+    useEffect(() => {
+        if (!user) return;
+        const q = query(collection(db, "lastMessages"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const messagesByRoom = {};
+            snapshot.forEach(doc => {
+                messagesByRoom[doc.id] = doc.data();
+            });
+            setLastMessages(messagesByRoom);
+        });
+        return () => unsubscribe();
+    }, [user]);
+
+    // Message listener (same as before)
     useEffect(() => {
         if (!selectedRoomId) return; 
-
         const q = query(
           collection(db, 'chats', selectedRoomId, 'messages'),
           orderBy('timestamp', 'asc')
         );
-
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const newMessages = [];
-            querySnapshot.forEach((doc) => {
-                newMessages.push({ ...doc.data(), id: doc.id });
-            });
+            querySnapshot.forEach((doc) => { newMessages.push({ ...doc.data(), id: doc.id }); });
             setMessages(newMessages);
         });
-
-        return () => {
-          unsubscribe(); 
-        };
+        return () => { unsubscribe(); };
     }, [selectedRoomId]); 
 
-    // handleSelectChat (now creates a unique room ID)
+    // handleSelectChat (same as before)
     const handleSelectChat = (otherUser) => {
         if (!user || !otherUser) return;
-
         const otherUserUid = otherUser.uid; 
         const currentUserUid = user.uid;
-
         const roomId = currentUserUid < otherUserUid 
             ? `${currentUserUid}_${otherUserUid}` 
             : `${otherUserUid}_${currentUserUid}`;
-
         setSelectedRoomId(roomId); 
         setSelectedChatUser(otherUser);
         setMessages([]); 
         setView('inbox');
     };
 
-    // handleSendMessage (now uses selectedRoomId)
+    // --- 6. UPDATED SEND MESSAGE FUNCTION ---
     const handleSendMessage = async (messageContent) => {
         if (!selectedRoomId || !messageContent.trim() || !user) return;
 
@@ -119,10 +120,36 @@ function App() {
             timestamp: serverTimestamp() 
         };
 
+        // 1. Add the message to the specific chat room's sub-collection
         await addDoc(collection(db, 'chats', selectedRoomId, 'messages'), newMessage);
+
+        // 2. ALSO update the 'lastMessages' collection for the preview
+        await setDoc(doc(db, "lastMessages", selectedRoomId), newMessage);
     };
 
-    // Render Logic
+    // --- 7. NEW: COMBINE USERS AND LAST MESSAGES ---
+    // This combines our two lists (users and messages)
+    // and sorts the chat list by the most recent message.
+    const chatsWithLastMessages = useMemo(() => {
+        return chats.map(chat => {
+            const currentUserUid = user.uid;
+            const otherUserUid = chat.uid;
+            const roomId = currentUserUid < otherUserUid 
+                ? `${currentUserUid}_${otherUserUid}` 
+                : `${otherUserUid}_${currentUserUid}`;
+            
+            const lastMsg = lastMessages[roomId];
+            
+            return {
+                ...chat,
+                lastMessage: lastMsg ? lastMsg.content : "Tap to start chatting...",
+                timestamp: lastMsg ? lastMsg.timestamp : null
+            };
+        }).sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+    }, [chats, lastMessages, user]);
+
+
+    // --- 8. RENDER LOGIC (UPDATED) ---
     if (loading) {
         return <div className="auth-container"><h2>Loading...</h2></div>;
     }
@@ -139,15 +166,16 @@ function App() {
         <div className="app-container">
             <Sidebar user={user} currentView={view} onSetView={setView} />
             
+            {/* We now pass in the new combined/sorted list */}
             {view === 'inbox' ? (
                 <ChatList
-                    chats={chats}
+                    chats={chatsWithLastMessages}
                     onSelectChat={handleSelectChat}
                     selectedChatId={selectedChatUser ? selectedChatUser.id : null}
                 />
             ) : (
                 <ContactList
-                    contacts={chats}
+                    contacts={chatsWithLastMessages}
                     onSelectContact={handleSelectChat}
                 />
             )}

@@ -23,10 +23,7 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
 
     // --- THIS IS THE FIXED FUNCTION ---
     const formatTime = (timestamp) => {
-        // timestamp from Firebase can be null (on a local write)
-        // or it can be a Firebase Timestamp object.
-        
-        // 1. If timestamp is null or doesn't exist, show a temporary time
+        // 1. If timestamp is null or doesn't exist, handle it
         if (!timestamp) {
             return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
@@ -37,7 +34,7 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        // 3. Fallback if it's some other format (shouldn't happen)
+        // 3. Fallback for other potential formats
         return "Invalid Date";
     };
 
@@ -85,7 +82,6 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
                     type="text"
                     placeholder="Type a message..."
                     value={messageInput}
-                    // --- I ALSO FIXED THE TYPO HERE ---
                     onChange={(e) => setMessageInput(e.target.value)}
                 />
                 <FaMicrophone className="input-icon" />
