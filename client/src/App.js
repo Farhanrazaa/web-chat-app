@@ -1,6 +1,15 @@
-// --- 1. ALL IMPORTS MUST BE FIRST ---
 import React, { useState, useEffect, useRef } from 'react';
-import io from 'socket.io-client';
+// --- 1. IMPORT FIREBASE (NEW) ---
+import { db } from './firebase';
+import { 
+  collection, // Used to reference a 'table'
+  query,      // Used to build a 'select'
+  orderBy,    // Used for sorting
+  onSnapshot, // The real-time listener
+  addDoc,     // Used to add a new message
+  serverTimestamp // Gets the server's time
+} from 'firebase/firestore'; 
+
 import Sidebar from './components/Sidebar';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
@@ -9,76 +18,86 @@ import ContactList from './components/ContactList';
 import { FaComments } from 'react-icons/fa';
 import './App.css';
 
-// --- 2. PASTE YOUR RENDER URL HERE (AFTER IMPORTS) ---
-const BACKEND_URL = 'https://my-chat-backend-97lf.onrender.com';
-
-// --- 3. CONNECT SOCKET TO LIVE URL ---
-const socket = io(BACKEND_URL);
+// --- 2. NO MORE SOCKET.IO! ---
+// const socket = io(BACKEND_URL); // (This is now deleted)
 
 function App() {
-    const [chats, setChats] = useState([]);
+    const [chats, setChats] = useState([]); // This would also come from Firebase
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
 
+    // We still hardcode a "current user" for this demo
     const currentUser = { 
         id: 'currentUser123', 
         name: 'Alexa', 
         avatar: 'https://i.pravatar.cc/150?img=10'
     };
 
-    // --- 4. FETCH USERS FROM LIVE URL ---
+    // --- 3. FETCH USERS (For this demo, we'll keep it simple) ---
+    // In a real app, you'd fetch this user list from Firebase too.
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/users`)
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return res.json();
-            })
-            .then(data => setChats(data))
-            .catch(error => console.error('Error fetching users:', error));
+        const staticUsers = [
+            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
+            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https://i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
+            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https://i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
+        ];
+        setChats(staticUsers);
     }, []);
 
+    // --- 4. REAL-TIME MESSAGE LISTENER (REPLACES socket.on) ---
     useEffect(() => {
-        const handleReceiveMessage = (message) => {
-            if (message.senderId === currentUser.id) {
-                return;
-            }
-            if (message.roomId === selectedChatId) {
-                setMessages((prevMessages) => [...prevMessages, message]);
-            }
-        };
+        if (!selectedChatId) return; // Don't listen if no chat is selected
 
-        socket.on('receive_message', handleReceiveMessage);
+        // Create a 'query' to get messages from this chat room, ordered by time
+        const q = query(
+          collection(db, 'chats', selectedChatId, 'messages'), // Path: /chats/{chatId}/messages
+          orderBy('timestamp', 'asc') // Sort by timestamp
+        );
 
+        // 'onSnapshot' is the real-time listener
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const newMessages = [];
+            querySnapshot.forEach((doc) => {
+                newMessages.push({ ...doc.data(), id: doc.id });
+            });
+            setMessages(newMessages);
+        });
+
+        // This 'return' function is cleanup. It runs when the component
+        // unmounts or when 'selectedChatId' changes.
         return () => {
-            socket.off('receive_message', handleReceiveMessage);
+          unsubscribe(); // Stop listening to the old chat room
         };
-    }, [selectedChatId, currentUser.id]);
+    }, [selectedChatId]); // Re-run this effect when selectedChatId changes
 
-    
+
     const handleSelectChat = (chatId) => {
         setSelectedChatId(chatId);
-        setMessages([]); 
-        socket.emit('join_room', chatId);
+        setMessages([]); // Clear messages while new ones load
         setView('inbox');
     };
 
-    const handleSendMessage = (messageContent) => {
+    // --- 5. SEND MESSAGE FUNCTION (REPLACES socket.emit) ---
+    const handleSendMessage = async (messageContent) => {
         if (!selectedChatId || !messageContent.trim()) return;
 
+        // Create the new message object
         const newMessage = {
-            roomId: selectedChatId,
             senderId: currentUser.id,
             senderName: currentUser.name,
             content: messageContent,
-            timestamp: new Date().toISOString(),
             avatar: currentUser.avatar,
+            timestamp: serverTimestamp() // Use Firebase's server time
         };
+
+        // Add the new message to the database
+        // Path: /chats/{chatId}/messages
+        await addDoc(collection(db, 'chats', selectedChatId, 'messages'), newMessage);
         
-        socket.emit('send_message', newMessage);
-        setMessages((prevMessages) => [...prevMessages, { ...newMessage, isSender: true }]);
+        // We don't need optimistic update (setMessages) anymore, 
+        // because the 'onSnapshot' listener will see the new
+        // message and update the UI for us!
     };
 
     const selectedChat = chats.find(chat => chat.id === selectedChatId);
@@ -114,7 +133,7 @@ function App() {
             ) : (
                 <div className="no-chat-selected">
                     <FaComments className="no-chat-selected-icon" />
-                    <p>Select a chat to start messaging AAA</p>
+                    <p>Select a chat to start messaging</p>
                 </div>
             )}
         </div>
