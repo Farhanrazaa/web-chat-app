@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { auth, db } from '../firebase'; // <-- Make sure 'db' is imported
+import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'; // <-- Make sure 'doc' and 'setDoc' are imported
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 import './Auth.css';
 
@@ -23,13 +23,12 @@ function SignUp({ onSwitchToLogin }) {
             const user = userCredential.user;
 
             // --- 2. SAVE THE USER TO THE 'users' COLLECTION ---
-            // This is the part that is missing from your live app
             await setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 email: user.email,
                 name: user.email.split('@')[0], 
                 avatar: `https://i.pravatar.cc/150?u=${user.uid}`,
-                createdAt: serverTimestamp() // Good to add a timestamp
+                createdAt: serverTimestamp()
             });
 
         } catch (err) {
@@ -51,7 +50,8 @@ function SignUp({ onSwitchToLogin }) {
                 <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.g.target.value)}
+                    // --- THIS IS THE FIX ---
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
                     required
                 />
