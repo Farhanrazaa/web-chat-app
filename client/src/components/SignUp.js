@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase'; // <-- 1. IMPORT db
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore'; // <-- 2. IMPORT doc and setDoc
+
 import './Auth.css';
 
 function SignUp({ onSwitchToLogin }) {
@@ -16,7 +18,19 @@ function SignUp({ onSwitchToLogin }) {
             return;
         }
         try {
-            await createUserWithEmailAndPassword(auth, email, password);
+            // --- 3. CREATE THE USER ---
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // --- 4. SAVE THE USER TO THE 'users' COLLECTION ---
+            // We use setDoc to create a new document with the user's UID as its ID
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid,
+                email: user.email,
+                name: user.email.split('@')[0], // Use email prefix as a default name
+                avatar: `https://i.pravatar.cc/150?u=${user.uid}` // Generate a unique random avatar
+            });
+
         } catch (err) {
             setError(err.message);
         }

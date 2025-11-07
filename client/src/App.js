@@ -1,41 +1,40 @@
 import React, { useState, useEffect } from 'react';
-// --- 1. IMPORT AUTH AND NEW HOOK ---
+// --- 1. IMPORT AUTH AND FIRESTORE ---
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { 
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp
+} from 'firebase/firestore'; 
 
-import {
-    collection,
-    query,
-    orderBy,
-    onSnapshot,
-    addDoc,
-    serverTimestamp
-} from 'firebase/firestore';
-
-// --- 2. IMPORT LOGIN/SIGNUP COMPONENTS ---
+// --- 2. IMPORT COMPONENTS ---
 import Login from './components/Login';
 import SignUp from './components/SignUp';
-
 import Sidebar from './components/Sidebar';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import ProfileInfo from './components/ProfileInfo';
 import ContactList from './components/ContactList';
-import { FaComments } from 'react-icons/fa'; // <-- HERE IS THE FIX
+import { FaComments } from 'react-icons/fa';
 import './App.css';
 
 function App() {
-    // --- 3. NEW STATE ---
+    // --- 3. STATE ---
     const [user, setUser] = useState(null); // Will hold the auth'd user
     const [authView, setAuthView] = useState('login'); // 'login' or 'signup'
     const [loading, setLoading] = useState(true); // For initial auth check
 
-    const [chats, setChats] = useState([]);
+    const [chats, setChats] = useState([]); // This is now your dynamic user list
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
 
     // --- 4. AUTHENTICATION LISTENER ---
+    // Checks if the user is logged in or out
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
             if (authUser) {
@@ -52,24 +51,45 @@ function App() {
         return () => unsubscribe();
     }, []);
 
-    // (This 'static' user list is still for demo)
+    // --- 5. DYNAMIC USER LIST LISTENER ---
+    // Replaces the old 'staticUsers' block
     useEffect(() => {
-        const staticUsers = [
-            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
-            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https://i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
-            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https://i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
-            // Add more users here if you like
-        ];
-        setChats(staticUsers);
-    }, []);
-    
-    // (This message listener is the same as before)
+        if (!user) return; // Don't fetch if no user is logged in
+
+        // Create a query to get all documents from the 'users' collection
+        const q = query(collection(db, "users"));
+
+        // Use onSnapshot to listen for real-time updates
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const usersList = [];
+            querySnapshot.forEach((doc) => {
+                // Don't add the current logged-in user to their own chat list
+                if (doc.data().uid !== user.uid) {
+                    // We'll use the user's UID as the 'chat ID'
+                    // and add a placeholder lastMessage
+                    usersList.push({
+                         ...doc.data(),
+                         id: doc.data().uid, // Use UID as the ID for the chat list
+                         lastMessage: "Tap to start chatting..."
+                    });
+                }
+            });
+            setChats(usersList);
+        });
+
+        // Cleanup listener on unmount
+        return () => unsubscribe();
+
+    }, [user]); // Re-run this effect if the user logs in or out
+
+    // --- 6. REAL-TIME MESSAGE LISTENER ---
+    // (This is the same as before)
     useEffect(() => {
-        if (!selectedChatId) return;
+        if (!selectedChatId) return; 
 
         const q = query(
-            collection(db, 'chats', selectedChatId, 'messages'),
-            orderBy('timestamp', 'asc')
+          collection(db, 'chats', selectedChatId, 'messages'),
+          orderBy('timestamp', 'asc')
         );
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -81,27 +101,28 @@ function App() {
         });
 
         return () => {
-            unsubscribe();
+          unsubscribe(); 
         };
-    }, [selectedChatId]);
+    }, [selectedChatId]); 
 
 
     const handleSelectChat = (chatId) => {
         setSelectedChatId(chatId);
-        setMessages([]);
+        setMessages([]); 
         setView('inbox');
     };
 
-    // --- 5. UPDATE SEND MESSAGE TO USE REAL USER ---
+    // --- 7. SEND MESSAGE FUNCTION ---
+    // (This is the same as before)
     const handleSendMessage = async (messageContent) => {
-        if (!selectedChatId || !messageContent.trim() || !user) return; // Check for user
+        if (!selectedChatId || !messageContent.trim() || !user) return;
 
         const newMessage = {
-            senderId: user.uid, // <-- Use the logged-in user's ID
-            senderName: user.email.split('@')[0], // <-- Use their email as a name
+            senderId: user.uid, 
+            senderName: user.email.split('@')[0],
             content: messageContent,
-            avatar: 'https://i.pravatar.cc/150?img=10', // (You'd get this from their profile)
-            timestamp: serverTimestamp()
+            avatar: 'https://i.pravatar.cc/150?u=' + user.uid, // Use a unique avatar
+            timestamp: serverTimestamp() 
         };
 
         await addDoc(collection(db, 'chats', selectedChatId, 'messages'), newMessage);
@@ -109,7 +130,7 @@ function App() {
 
     const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
-    // --- 6. NEW RENDER LOGIC ---
+    // --- 8. RENDER LOGIC ---
     if (loading) {
         return <div className="auth-container"><h2>Loading...</h2></div>;
     }
@@ -125,7 +146,7 @@ function App() {
     return (
         <div className="app-container">
             <Sidebar user={user} currentView={view} onSetView={setView} />
-
+            
             {view === 'inbox' ? (
                 <ChatList
                     chats={chats}
