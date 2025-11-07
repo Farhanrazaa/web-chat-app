@@ -1,61 +1,79 @@
-import React, { useState, useEffect, useRef } from 'react';
-// --- 1. IMPORT FIREBASE (NEW) ---
-import { db } from './firebase';
+import React, { useState, useEffect } from 'react';
+// --- 1. IMPORT AUTH AND NEW HOOK ---
+import { auth, db } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+
 import { 
-  collection, // Used to reference a 'table'
-  query,      // Used to build a 'select'
-  orderBy,    // Used for sorting
-  onSnapshot, // The real-time listener
-  addDoc,     // Used to add a new message
-  serverTimestamp // Gets the server's time
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp
 } from 'firebase/firestore'; 
+
+// --- 2. IMPORT LOGIN/SIGNUP COMPONENTS ---
+import Login from './components/Login';
+import SignUp from './components/SignUp';
 
 import Sidebar from './components/Sidebar';
 import ChatList from './components/ChatList';
 import ChatWindow from './components/ChatWindow';
 import ProfileInfo from './components/ProfileInfo';
 import ContactList from './components/ContactList';
-import { FaComments } from 'react-icons/fa';
+import { FaComments }S from 'react-icons/fa';
 import './App.css';
 
-// --- 2. NO MORE SOCKET.IO! ---
-// const socket = io(BACKEND_URL); // (This is now deleted)
-
 function App() {
-    const [chats, setChats] = useState([]); // This would also come from Firebase
+    // --- 3. NEW STATE ---
+    const [user, setUser] = useState(null); // Will hold the auth'd user
+    const [authView, setAuthView] = useState('login'); // 'login' or 'signup'
+    const [loading, setLoading] = useState(true); // For initial auth check
+
+    const [chats, setChats] = useState([]); 
     const [selectedChatId, setSelectedChatId] = useState(null);
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
 
-    // We still hardcode a "current user" for this demo
-    const currentUser = { 
-        id: 'currentUser123', 
-        name: 'Alexa', 
-        avatar: 'https://i.pravatar.cc/150?img=10'
-    };
+    // --- 4. AUTHENTICATION LISTENER ---
+    // This is the core of our new logic. It runs on load
+    // and checks if the user is already logged in.
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (authUser) => {
+            if (authUser) {
+                // User is signed in
+                setUser(authUser);
+            } else {
+                // User is signed out
+                setUser(null);
+            }
+            setLoading(false); // Done checking auth
+        });
 
-    // --- 3. FETCH USERS (For this demo, we'll keep it simple) ---
-    // In a real app, you'd fetch this user list from Firebase too.
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, []);
+
+    // (This 'static' user list is still for demo.
+    // In a real app, this would also come from Firebase)
     useEffect(() => {
         const staticUsers = [
-            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https://i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
-            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https://i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
-            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https://i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
+            { id: '1', name: 'Jennifer Lisity', status: 'Active Now', avatar: 'https.i.pravatar.cc/150?img=1', lastMessage: "Said one, let. Morning them, said. So were..." },
+            { id: '2', name: 'Nancy J. Martinez', status: 'Online', avatar: 'https.i.pravatar.cc/150?img=2', lastMessage: "Hey Jennifer, I just saw your message right now..." },
+            { id: '3', name: 'Helen Pool', status: '1h ago', avatar: 'https.i.pravatar.cc/150?img=3', lastMessage: "abundantly be fruitful morning moveth hath..." }
         ];
         setChats(staticUsers);
     }, []);
 
-    // --- 4. REAL-TIME MESSAGE LISTENER (REPLACES socket.on) ---
+    // (This message listener is the same as before)
     useEffect(() => {
-        if (!selectedChatId) return; // Don't listen if no chat is selected
+        if (!selectedChatId) return; 
 
-        // Create a 'query' to get messages from this chat room, ordered by time
         const q = query(
-          collection(db, 'chats', selectedChatId, 'messages'), // Path: /chats/{chatId}/messages
-          orderBy('timestamp', 'asc') // Sort by timestamp
+          collection(db, 'chats', selectedChatId, 'messages'),
+          orderBy('timestamp', 'asc')
         );
 
-        // 'onSnapshot' is the real-time listener
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const newMessages = [];
             querySnapshot.forEach((doc) => {
@@ -64,47 +82,56 @@ function App() {
             setMessages(newMessages);
         });
 
-        // This 'return' function is cleanup. It runs when the component
-        // unmounts or when 'selectedChatId' changes.
         return () => {
-          unsubscribe(); // Stop listening to the old chat room
+          unsubscribe(); 
         };
-    }, [selectedChatId]); // Re-run this effect when selectedChatId changes
+    }, [selectedChatId]); 
 
 
     const handleSelectChat = (chatId) => {
         setSelectedChatId(chatId);
-        setMessages([]); // Clear messages while new ones load
+        setMessages([]); 
         setView('inbox');
     };
 
-    // --- 5. SEND MESSAGE FUNCTION (REPLACES socket.emit) ---
+    // --- 5. UPDATE SEND MESSAGE TO USE REAL USER ---
     const handleSendMessage = async (messageContent) => {
-        if (!selectedChatId || !messageContent.trim()) return;
+        if (!selectedChatId || !messageContent.trim() || !user) return; // Check for user
 
-        // Create the new message object
         const newMessage = {
-            senderId: currentUser.id,
-            senderName: currentUser.name,
+            senderId: user.uid, // <-- Use the logged-in user's ID
+            senderName: user.email.split('@')[0], // <-- Use their email as a name
             content: messageContent,
-            avatar: currentUser.avatar,
-            timestamp: serverTimestamp() // Use Firebase's server time
+            avatar: 'https://i.pravatar.cc/150?img=10', // (You'd get this from their profile)
+            timestamp: serverTimestamp() 
         };
 
-        // Add the new message to the database
-        // Path: /chats/{chatId}/messages
         await addDoc(collection(db, 'chats', selectedChatId, 'messages'), newMessage);
-        
-        // We don't need optimistic update (setMessages) anymore, 
-        // because the 'onSnapshot' listener will see the new
-        // message and update the UI for us!
     };
 
     const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
+    // --- 6. NEW RENDER LOGIC ---
+
+    // Show a loading spinner while checking auth
+    if (loading) {
+        return <div className="auth-container"><h2>Loading...</h2></div>;
+    }
+
+    // If no user, show the Login or SignUp page
+    if (!user) {
+        return authView === 'login' ? (
+            <Login onSwitchToSignUp={() => setAuthView('signup')} />
+        ) : (
+            <SignUp onSwitchToLogin={() => setAuthView('login')} />
+        );
+    }
+
+    // If user IS logged in, show the chat app
     return (
         <div className="app-container">
-            <Sidebar currentView={view} onSetView={setView} />
+            {/* We pass the 'user' object to Sidebar for the logout button */}
+            <Sidebar user={user} currentView={view} onSetView={setView} />
             
             {view === 'inbox' ? (
                 <ChatList
@@ -126,7 +153,7 @@ function App() {
                         chat={selectedChat}
                         messages={messages}
                         onSendMessage={handleSendMessage}
-                        currentUser={currentUser}
+                        currentUser={user} // Pass the real user
                     />
                     <ProfileInfo user={selectedChat} />
                 </>

@@ -103,3 +103,13 @@
 .sidebar-bottom .settings-icon:hover {
     color: #fff;
 }
+
+/* Add this to the end of Sidebar.css */
+.sidebar-bottom .logout-icon {
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.sidebar-bottom .logout-icon:hover {
+    color: #ff6b6b; /* Red on hover */
+}
