@@ -23,7 +23,7 @@ function SignUp({ onSwitchToLogin }) {
             const user = userCredential.user;
 
             // --- 2. SAVE THE USER TO THE 'users' COLLECTION ---
-            // This is the part that was likely missing or broken
+            // This is the part that is missing from your live app
             await setDoc(doc(db, "users", user.uid), {
                 uid: user.uid,
                 email: user.email,
@@ -51,7 +51,7 @@ function SignUp({ onSwitchToLogin }) {
                 <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.g.target.value)}
                     placeholder="Password"
                     required
                 />
