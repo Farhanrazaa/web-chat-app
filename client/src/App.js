@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 // --- 1. IMPORT AUTH AND FIRESTORE ---
 import { auth, db } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { 
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  serverTimestamp
-} from 'firebase/firestore'; 
+import {
+    collection,
+    query,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    serverTimestamp
+} from 'firebase/firestore';
 
 // --- 2. IMPORT COMPONENTS ---
 import Login from './components/Login';
@@ -68,9 +68,9 @@ function App() {
                     // We'll use the user's UID as the 'chat ID'
                     // and add a placeholder lastMessage
                     usersList.push({
-                         ...doc.data(),
-                         id: doc.data().uid, // Use UID as the ID for the chat list
-                         lastMessage: "Tap to start chatting..."
+                        ...doc.data(),
+                        id: doc.data().uid, // Use UID as the ID for the chat list
+                        lastMessage: "Tap to start chatting..."
                     });
                 }
             });
@@ -85,11 +85,11 @@ function App() {
     // --- 6. REAL-TIME MESSAGE LISTENER ---
     // (This is the same as before)
     useEffect(() => {
-        if (!selectedChatId) return; 
+        if (!selectedChatId) return;
 
         const q = query(
-          collection(db, 'chats', selectedChatId, 'messages'),
-          orderBy('timestamp', 'asc')
+            collection(db, 'chats', selectedChatId, 'messages'),
+            orderBy('timestamp', 'asc')
         );
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -101,14 +101,26 @@ function App() {
         });
 
         return () => {
-          unsubscribe(); 
+            unsubscribe();
         };
-    }, [selectedChatId]); 
+    }, [selectedChatId]);
 
 
-    const handleSelectChat = (chatId) => {
-        setSelectedChatId(chatId);
-        setMessages([]); 
+    const handleSelectChat = (otherUser) => {
+        if (!user) return; // Make sure the current user is loaded
+
+        // We get the other user's UID from the chat object
+        const otherUserUid = otherUser.uid;
+        const currentUserUid = user.uid;
+
+        // Create a unique room ID by combining both user IDs
+        // We sort them to make sure the ID is always the same
+        const roomId = currentUserUid < otherUserUid
+            ? `${currentUserUid}_${otherUserUid}`
+            : `${otherUserUid}_${currentUserUid}`;
+
+        setSelectedChatId(roomId); // Set the chat ID to this new, combined room ID
+        setMessages([]);
         setView('inbox');
     };
 
@@ -118,11 +130,11 @@ function App() {
         if (!selectedChatId || !messageContent.trim() || !user) return;
 
         const newMessage = {
-            senderId: user.uid, 
+            senderId: user.uid,
             senderName: user.email.split('@')[0],
             content: messageContent,
             avatar: 'https://i.pravatar.cc/150?u=' + user.uid, // Use a unique avatar
-            timestamp: serverTimestamp() 
+            timestamp: serverTimestamp()
         };
 
         await addDoc(collection(db, 'chats', selectedChatId, 'messages'), newMessage);
@@ -146,17 +158,17 @@ function App() {
     return (
         <div className="app-container">
             <Sidebar user={user} currentView={view} onSetView={setView} />
-            
+
             {view === 'inbox' ? (
                 <ChatList
                     chats={chats}
-                    onSelectChat={handleSelectChat}
+                    onSelectChat={(chat) => handleSelectChat(chat)} // <-- Pass the whole chat object
                     selectedChatId={selectedChatId}
                 />
             ) : (
                 <ContactList
                     contacts={chats}
-                    onSelectContact={handleSelectChat}
+                    onSelectContact={(contact) => handleSelectChat(contact)} // <-- Pass the whole contact object
                 />
             )}
 

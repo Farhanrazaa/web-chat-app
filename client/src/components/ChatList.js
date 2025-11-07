@@ -29,7 +29,7 @@ function ChatList({ chats, onSelectChat, selectedChatId }) {
                         key={chat.id}
                         // Add 'active' class if this chat is the selected one
                         className={`chat-list-item ${selectedChatId === chat.id ? 'active' : ''}`}
-                        onClick={() => onSelectChat(chat.id)}
+                        onClick={() => onSelectChat(chat)}
                     >
                         <div className="chat-avatar-container">
                             <img src={chat.avatar} alt={chat.name} className="chat-avatar" />

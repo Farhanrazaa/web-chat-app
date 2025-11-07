@@ -32,7 +32,7 @@ function ContactList({ contacts, onSelectContact }) {
                     <div
                         key={contact.id}
                         className="chat-list-item"
-                        onClick={() => onSelectContact(contact.id)}
+                        onClick={() => onSelectContact(contact)}
                     >
                         <div className="chat-avatar-container">
                             <img src={contact.avatar} alt={contact.name} className="chat-avatar" />
