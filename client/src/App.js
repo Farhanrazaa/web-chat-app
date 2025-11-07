@@ -40,7 +40,7 @@ function App() {
     const [view, setView] = useState('inbox');
     const [lastMessages, setLastMessages] = useState({});
 
-    // --- THIS IS THE FIXED AUTH LISTENER ---
+    // Auth listener (same as before)
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
             if (authUser) {
@@ -52,14 +52,12 @@ function App() {
                     } else {
                         console.log("User profile not found in Firestore!");
                     }
-                    // We only stop loading AFTER we have the profile
                     setLoading(false); 
                 });
                 return () => unsubProfile(); 
             } else {
                 setUser(null);
                 setUserProfile(null);
-                // We also stop loading if the user is logged out
                 setLoading(false); 
             }
         });
@@ -137,11 +135,12 @@ function App() {
         await setDoc(doc(db, "lastMessages", selectedRoomId), newMessage);
     };
 
-    // toggleFavorite (same as before)
+    // --- 1. THIS IS THE FIRST FIX ---
+    // Added '|| []' to prevent crash if 'favorites' is undefined
     const handleToggleFavorite = async (otherUserUid) => {
         if (!userProfile) return;
         const userDocRef = doc(db, "users", user.uid);
-        const isFavorite = userProfile.favorites.includes(otherUserUid);
+        const isFavorite = (userProfile.favorites || []).includes(otherUserUid);
         if (isFavorite) {
             await updateDoc(userDocRef, { favorites: arrayRemove(otherUserUid) });
         } else {
@@ -152,6 +151,7 @@ function App() {
     // Combining/sorting chats (same as before)
     const chatsWithLastMessages = useMemo(() => {
         if (!userProfile) return [];
+        // This '|| []' was already here and is correct
         const favoritesList = userProfile.favorites || [];
         return chats.map(chat => {
             const currentUserUid = user.uid;
@@ -211,8 +211,6 @@ function App() {
                 />
             )}
 
-            {/* --- THIS IS THE SECOND PART OF THE FIX --- */}
-            {/* We must check for userProfile before rendering ProfileInfo */}
             {selectedChatUser ? (
                 <>
                     <ChatWindow
@@ -222,12 +220,13 @@ function App() {
                         onSendMessage={handleSendMessage}
                         currentUser={user}
                     />
-                    {/* Only render ProfileInfo if userProfile is loaded */}
                     {userProfile && (
                         <ProfileInfo 
                             user={selectedChatUser} 
                             onToggleFavorite={handleToggleFavorite}
-                            isFavorite={userProfile.favorites.includes(selectedChatUser.uid)}
+                            // --- 2. THIS IS THE SECOND FIX ---
+                            // Added '|| []' to prevent crash if 'favorites' is undefined
+                            isFavorite={(userProfile.favorites || []).includes(selectedChatUser.uid)}
                         />
                     )}
                 </>
