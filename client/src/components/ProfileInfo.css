@@ -1,8 +1,5 @@
 .profile-info-container {
-    /* This component will not be part of the main grid */
-    /* It will be placed by App.js */
-    width: 300px; /* Fixed width */
-    background-color: #2a2a4a; /* Matches chat list bg */
+    background-color: #2a2a4a;
     border-left: 1px solid #3a3a5a;
     display: flex;
     flex-direction: column;
@@ -26,7 +23,7 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    background-color: #1f1f38; /* Darker bg */
+    background-color: #1f1f38;
     border-radius: 15px;
     margin-bottom: 30px;
 }
@@ -40,19 +37,12 @@
     border: 3px solid #3f3f6a;
 }
 
-.profile-name {
-    margin: 0 0 5px 0;
-    color: #fff;
-    font-size: 1.2em;
-}
-
 .profile-status {
     font-size: 0.9em;
-    color: #4CAF50; /* Green */
+    color: #4CAF50;
 }
 
 .attachments-section {
-    /* Takes up remaining space if needed */
     flex-grow: 1;
 }
 
@@ -80,14 +70,14 @@
 
 .attachment-gallery {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 2 columns */
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     margin-bottom: 20px;
 }
 
 .attachment-gallery img {
     width: 100%;
-    height: 100px; /* Fixed height for uniformity */
+    height: 100px;
     object-fit: cover;
     border-radius: 10px;
 }
@@ -109,23 +99,7 @@
     cursor: pointer;
 }
 
-/* We used inline styles for the colors, but this is how */
-/* you would do it in pure CSS */
-.type-button.docs {
-    background: #e7f3ff;
-    color: #4b9fff;
-}
-.type-button.images {
-    background: #fff0e9;
-    color: #ff844b;
-}
-.type-button.audio {
-    background: #e9f9f0;
-    color: #31d07b;
-}
-
-/* --- ADD THIS CSS TO THE END OF YOUR FILE --- */
-
+/* --- STYLES FOR THE STAR --- */
 .profile-name-container {
     display: flex;
     align-items: center;
