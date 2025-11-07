@@ -62,6 +62,7 @@ function App() {
         ];
         setChats(staticUsers);
     }, []);
+    
     // (This message listener is the same as before)
     useEffect(() => {
         if (!selectedChatId) return;
