@@ -1,9 +1,7 @@
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
-// We import ChatList.css to re-use its styles!
 import './ChatList.css'; 
 
-// Helper function to get the status class
 function getStatusClass(status) {
     if (status === 'Active Now' || status === 'Online') {
         return 'online';
@@ -12,8 +10,7 @@ function getStatusClass(status) {
 }
 
 function ContactList({ contacts, onSelectContact }) {
-
-    // Sort contacts alphabetically
+    
     const sortedContacts = [...contacts].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
@@ -25,21 +22,19 @@ function ContactList({ contacts, onSelectContact }) {
                     <input type="text" placeholder="Search contacts" />
                 </div>
             </div>
-
+            
             <div className="chat-list-items">
-                {/* Loop over the sorted contacts array */}
                 {sortedContacts.map(contact => (
                     <div
                         key={contact.id}
                         className="chat-list-item"
-                        onClick={() => onSelectContact(contact)}
+                        onClick={() => onSelectContact(contact)} // <-- THIS IS THE FIX (pass whole 'contact' object)
                     >
                         <div className="chat-avatar-container">
                             <img src={contact.avatar} alt={contact.name} className="chat-avatar" />
                             <span className={`status-indicator ${getStatusClass(contact.status)}`}></span>
                         </div>
-
-                        {/* We just show name and status, no last message */}
+                        
                         <div className="chat-info">
                             <span className="chat-name">{contact.name}</span>
                             <div className="chat-last-message">

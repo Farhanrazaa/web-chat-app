@@ -25,17 +25,16 @@ function App() {
     const [authView, setAuthView] = useState('login');
     const [loading, setLoading] = useState(true);
 
-    const [chats, setChats] = useState([]);
+    const [chats, setChats] = useState([]); 
     
-    // --- 1. STATE CHANGE ---
-    // We now track the selected USER and the selected ROOM ID separately.
+    // These two states are the core of the fix
     const [selectedRoomId, setSelectedRoomId] = useState(null);
     const [selectedChatUser, setSelectedChatUser] = useState(null);
     
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('inbox');
 
-    // (Auth listener is the same)
+    // Auth listener
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
             if (authUser) {
@@ -48,7 +47,7 @@ function App() {
         return () => unsubscribe();
     }, []);
 
-    // (Dynamic user list listener is the same)
+    // Dynamic user list listener
     useEffect(() => {
         if (!user) return; 
 
@@ -69,13 +68,12 @@ function App() {
         return () => unsubscribe();
     }, [user]); 
 
-    // --- 2. MESSAGE LISTENER UPDATE ---
-    // This now depends on 'selectedRoomId'
+    // Message listener (now depends on selectedRoomId)
     useEffect(() => {
-        if (!selectedRoomId) return; // <-- Changed
+        if (!selectedRoomId) return; 
 
         const q = query(
-          collection(db, 'chats', selectedRoomId, 'messages'), // <-- Changed
+          collection(db, 'chats', selectedRoomId, 'messages'),
           orderBy('timestamp', 'asc')
         );
 
@@ -90,10 +88,9 @@ function App() {
         return () => {
           unsubscribe(); 
         };
-    }, [selectedRoomId]); // <-- Changed
+    }, [selectedRoomId]); 
 
-    // --- 3. HANDLESELECTCHAT UPDATE ---
-    // This now sets both the user and the room ID
+    // handleSelectChat (now creates a unique room ID)
     const handleSelectChat = (otherUser) => {
         if (!user || !otherUser) return;
 
@@ -104,16 +101,15 @@ function App() {
             ? `${currentUserUid}_${otherUserUid}` 
             : `${otherUserUid}_${currentUserUid}`;
 
-        setSelectedRoomId(roomId); // Set the room
-        setSelectedChatUser(otherUser); // Set the user
+        setSelectedRoomId(roomId); 
+        setSelectedChatUser(otherUser);
         setMessages([]); 
         setView('inbox');
     };
 
-    // --- 4. SEND MESSAGE UPDATE ---
-    // This now uses 'selectedRoomId'
+    // handleSendMessage (now uses selectedRoomId)
     const handleSendMessage = async (messageContent) => {
-        if (!selectedRoomId || !messageContent.trim() || !user) return; // <-- Changed
+        if (!selectedRoomId || !messageContent.trim() || !user) return;
 
         const newMessage = {
             senderId: user.uid, 
@@ -123,13 +119,10 @@ function App() {
             timestamp: serverTimestamp() 
         };
 
-        await addDoc(collection(db, 'chats', selectedRoomId, 'messages'), newMessage); // <-- Changed
+        await addDoc(collection(db, 'chats', selectedRoomId, 'messages'), newMessage);
     };
 
-    // --- 5. RENDER LOGIC UPDATE ---
-    // We no longer need 'selectedChat' because we have 'selectedChatUser'
-    // const selectedChat = chats.find(chat => chat.id === selectedChatId); // <-- DELETED
-
+    // Render Logic
     if (loading) {
         return <div className="auth-container"><h2>Loading...</h2></div>;
     }
@@ -150,8 +143,7 @@ function App() {
                 <ChatList
                     chats={chats}
                     onSelectChat={handleSelectChat}
-                    // We pass the selected user's ID for highlighting
-                    selectedChatId={selectedChatUser ? selectedChatUser.id : null} // <-- Changed
+                    selectedChatId={selectedChatUser ? selectedChatUser.id : null}
                 />
             ) : (
                 <ContactList
@@ -160,17 +152,16 @@ function App() {
                 />
             )}
 
-            {/* We now check for 'selectedChatUser' to render the window */}
-            {selectedChatUser ? ( // <-- Changed
+            {selectedChatUser ? (
                 <>
                     <ChatWindow
-                        key={selectedChatUser.id} // <-- Changed
-                        chat={selectedChatUser} // <-- Changed
+                        key={selectedChatUser.id}
+                        chat={selectedChatUser}
                         messages={messages}
                         onSendMessage={handleSendMessage}
                         currentUser={user}
                     />
-                    <ProfileInfo user={selectedChatUser} /> // <-- Changed
+                    <ProfileInfo user={selectedChatUser} />
                 </>
             ) : (
                 <div className="no-chat-selected">
