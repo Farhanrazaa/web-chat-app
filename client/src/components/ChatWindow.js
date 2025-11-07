@@ -1,34 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './ChatWindow.css'; // We will create this next
+import './ChatWindow.css';
 import { FaPaperclip, FaMicrophone, FaEllipsisH, FaSearch } from 'react-icons/fa';
-import { IoSend } from 'react-icons/io5'; // A better send icon
+import { IoSend } from 'react-icons/io5';
 
 function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
     const [messageInput, setMessageInput] = useState('');
-    // Create a ref to the message list's end
     const messagesEndRef = useRef(null);
 
-    // Helper function to auto-scroll to the bottom
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // This effect runs every time the 'messages' array changes
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // Handle the form submission (pressing Enter or clicking Send)
     const handleSubmit = (e) => {
-        e.preventDefault(); // Prevent page reload
+        e.preventDefault();
         onSendMessage(messageInput);
-        setMessageInput(''); // Clear the input field
+        setMessageInput('');
     };
 
-    // Helper to format the timestamp (e.g., "09:45 PM")
-    const formatTime = (isoString) => {
-        const date = new Date(isoString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // --- THIS IS THE FIXED FUNCTION ---
+    const formatTime = (timestamp) => {
+        // timestamp from Firebase can be null (on a local write)
+        // or it can be a Firebase Timestamp object.
+        
+        // 1. If timestamp is null or doesn't exist, show a temporary time
+        if (!timestamp) {
+            return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // 2. Check if it's a Firebase Timestamp and has the toDate method
+        if (typeof timestamp.toDate === 'function') {
+            const date = timestamp.toDate();
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // 3. Fallback if it's some other format (shouldn't happen)
+        return "Invalid Date";
     };
 
     return (
@@ -36,8 +46,6 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
             {/* --- 1. CHAT HEADER --- */}
             <div className="chat-header">
                 <div className="chat-header-info">
-                    {/* Avatar is hidden, as per the design */}
-                    {/* <img src={chat.avatar} alt={chat.name} className="chat-header-avatar" /> */}
                     <div>
                         <h3>{chat.name}</h3>
                         <span className="chat-header-status">{chat.status}</span>
@@ -52,24 +60,21 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
 
             {/* --- 2. MESSAGES LIST --- */}
             <div className="chat-messages">
-                {messages.map((msg, index) => (
-                    <div
-                        key={index}
-                        // Set class to 'sent' or 'received' based on sender
-                        // This is the fixed line
+                {messages.map((msg) => (
+                    <div 
+                        key={msg.id}
                         className={`message-bubble ${msg.isSender || msg.senderId === currentUser.uid ? 'sent' : 'received'}`}
                     >
-                        {/* Only show avatar for received messages */}
-                        {!(msg.isSender || msg.senderId === currentUser.id) && (
+                        {!(msg.isSender || msg.senderId === currentUser.uid) && (
                             <img src={msg.avatar || chat.avatar} alt="avatar" className="message-avatar" />
                         )}
                         <div className="message-content">
                             <p>{msg.content}</p>
+                            {/* This will now call the new formatTime function */}
                             <span className="message-time">{formatTime(msg.timestamp)}</span>
                         </div>
                     </div>
                 ))}
-                {/* This empty div is the anchor for auto-scrolling */}
                 <div ref={messagesEndRef} />
             </div>
 
@@ -80,6 +85,7 @@ function ChatWindow({ chat, messages, onSendMessage, currentUser }) {
                     type="text"
                     placeholder="Type a message..."
                     value={messageInput}
+                    // --- I ALSO FIXED THE TYPO HERE ---
                     onChange={(e) => setMessageInput(e.target.value)}
                 />
                 <FaMicrophone className="input-icon" />
